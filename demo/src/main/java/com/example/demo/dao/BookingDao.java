@@ -4,7 +4,6 @@ import com.example.demo.model.*;
 
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,21 +56,57 @@ public class BookingDao {
         }
     }
 
-    public  boolean addReservation (Reservations reservations) throws  SQLException {
-        try (PreparedStatement psReservation = connection.prepareStatement("INSERT INTO reservations(client_id, time_id) VALUES (?, ?)")){
-            psReservation.setInt(1, reservations.getClient_id());
-            psReservation.setObject(2, reservations.getTime_id());
-            int rowsInserted = psReservation.executeUpdate();
-            return  rowsInserted > 0;
+    public boolean updateClient (Clients clients) throws  SQLException {
+        try (PreparedStatement psclient = connection.prepareStatement(
+                "UPDATE clients SET name = ?, phone = ?, email = ? WHERE id = ?")){
+            psclient.setString(1, clients.getName());
+            psclient.setString(2, clients.getPhone());
+            psclient.setString(3, clients.getEmail());
+            psclient.setInt(4, clients.getId());
+            int rowsInserted = psclient.executeUpdate();
+            return rowsInserted > 0;
         }
     }
 
-    public int findTimeSlotsId (LocalDateTime dateTime) throws  SQLException {
+    public boolean deleteReservation (ReservedDeleteDto reservedDeleteDto) throws  SQLException {
+        try (PreparedStatement psReservation = connection.prepareStatement(
+                "UPDATE reservations SET status = 'Cancel', reason_delete = ? WHERE client_id = ?")){
+            psReservation.setString(1, reservedDeleteDto.getReason_delete());
+            psReservation.setInt(2, reservedDeleteDto.getClientId());
+            int rowsInserted = psReservation.executeUpdate();
+            return rowsInserted > 0;
+        }
+    }
+
+    public int addReservation (ReservedDto reservedDto) throws  SQLException {
+        LocalDate date = reservedDto.getDate();
+        LocalTime time = reservedDto.getTime();
+
+        int time_id = findTimeSlotsId(date, time);
+
+        try (PreparedStatement psReservation = connection.prepareStatement(
+                "INSERT INTO reservations(client_id, time_id) VALUES (?, ?)",
+                Statement.RETURN_GENERATED_KEYS)){
+            psReservation.setInt(1, reservedDto.getClientId());
+            psReservation.setObject(2, time_id);
+            psReservation.executeUpdate();
+
+            try (ResultSet generatedKeys = psReservation.getGeneratedKeys()){
+                if (generatedKeys.next()) {
+                    return generatedKeys.getInt(1);
+                } else {
+                    throw new SQLException();
+                }
+            }
+        }
+    }
+
+    public int findTimeSlotsId (LocalDate date, LocalTime time) throws SQLException {
         try (PreparedStatement psTimeSlotsId = connection.prepareStatement(
                 "SELECT id FROM time_slots WHERE date=? AND time=?"
         )) {
-            psTimeSlotsId.setObject(1, dateTime.toLocalDate());
-            psTimeSlotsId.setObject(2, dateTime.toLocalTime());
+            psTimeSlotsId.setObject(1, date );
+            psTimeSlotsId.setObject(2, time );
             ResultSet resultSet = psTimeSlotsId.executeQuery();
             if (resultSet.next()) {
                 return resultSet.getInt("id");
@@ -120,12 +155,12 @@ public class BookingDao {
             statement.setObject(1, date);
             ResultSet resultSet = statement.executeQuery();
             while (resultSet.next()) {
-                LocalDateTime datetime = resultSet.getObject("datetime", LocalDateTime.class);
+                LocalTime time = resultSet.getObject("time", LocalTime.class);
                 int count = resultSet.getInt("count");
                 String clientList = resultSet.getString("client_list");
 
                 List<Clients> clients = getClientsList(clientList);
-                result.add(new ReservationsDto(datetime, count, clients));
+                result.add(new ReservationsDto(time, count, clients));
             }
         }
         return result;

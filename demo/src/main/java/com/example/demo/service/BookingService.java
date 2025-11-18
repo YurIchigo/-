@@ -4,10 +4,8 @@ import com.example.demo.dao.BookingDao;
 import com.example.demo.model.*;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,8 +32,16 @@ public class BookingService {
         return bookingDao.addClient(clients);
     }
 
-    public boolean newReservation(Reservations reservations) throws  SQLException {
-        return  bookingDao.addReservation(reservations);
+    public boolean updateNewClient(Clients clients) throws SQLException {
+        return bookingDao.updateClient(clients);
+    }
+
+    public int newReservation(ReservedDto reservedDto) throws  SQLException {
+        return  bookingDao.addReservation(reservedDto);
+    }
+
+    public boolean deleteReserved(ReservedDeleteDto reservedDeleteDto) throws  SQLException {
+        return bookingDao.deleteReservation(reservedDeleteDto);
     }
 
     public List<Time_SlotsDto> getFreeTimeSlots(LocalDate date) throws SQLException {

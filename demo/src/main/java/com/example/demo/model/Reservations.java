@@ -20,7 +20,7 @@ public class Reservations {
         return id;
     }
 
-    public void setIdR(int id) {
+    public void setId(int id) {
         this.id = id;
     }
 

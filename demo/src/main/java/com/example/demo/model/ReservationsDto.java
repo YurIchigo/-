@@ -1,21 +1,22 @@
 package com.example.demo.model;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 public class ReservationsDto {
-    private LocalDateTime datetime;
+    private LocalTime time;
     private int count;
     private List<Clients> clients;
 
-    public ReservationsDto(LocalDateTime datetime, int count, List<Clients> clients) {
-        this.datetime = datetime;
+    public ReservationsDto(LocalTime time, int count, List<Clients> clients) {
+        this.time = time;
         this.count = count;
         this.clients = clients;
     }
 
-    public void setDateTime(LocalDateTime datetime) {
-        this.datetime = datetime;
+    public void setTime(LocalTime datetime) {
+        this.time = datetime;
     }
 
     public void setClients(List<Clients> clients) {
@@ -26,8 +27,8 @@ public class ReservationsDto {
         this.count = count;
     }
 
-    public LocalDateTime getDatetime() {
-        return datetime;
+    public LocalTime gettime() {
+        return time;
     }
 
     public List<Clients> getClients() {

@@ -8,16 +8,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
+
 
 @RestController
 @RequestMapping("/api/v0/pool")
@@ -68,15 +65,38 @@ public class BookingController {
         }
     }
 
-    @PostMapping("/reservations")
-    public ResponseEntity<?> addReservation(@RequestBody Reservations reservations) {
+    @PatchMapping("/clients/{id}")
+    public ResponseEntity<Clients> patchClients(@PathVariable int id, @RequestBody Clients clients) {
         try {
-            boolean reservationNew = bookingService.newReservation(reservations);
-            if (reservationNew) {
-                return  ResponseEntity.ok().build();
-            } else {
-                return ResponseEntity.badRequest().body("Ошибка создания записи");
+            Optional<Clients> optionalClients = bookingService.getClientById(id);
+
+            if (!optionalClients.isPresent()) {
+                return ResponseEntity.notFound().build();
             }
+
+            Clients upClient = optionalClients.get();
+            upClient.setName(clients.getName());
+            upClient.setPhone(clients.getPhone());
+            upClient.setEmail(clients.getEmail());
+
+            boolean updateDataClient = bookingService.updateNewClient(upClient);
+            if (updateDataClient) {
+                return ResponseEntity.ok(upClient);
+            } else  {
+                return ResponseEntity.badRequest().build();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(System.err);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+
+    }
+
+    @PostMapping("/reservations")
+    public ResponseEntity<?> addReservation(@RequestBody ReservedDto reservedDto) {
+        try {
+            int newReservationId = bookingService.newReservation(reservedDto);
+            return ResponseEntity.ok(Map.of("id", newReservationId));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -94,4 +114,21 @@ public class BookingController {
         return ResponseEntity.ok(data);
     }
 
+    @PostMapping("reservations/{id}/cancel")
+    public ResponseEntity<ReservedDeleteDto> updateReservation(@PathVariable int id, @RequestBody ReservedDeleteDto reservedDeleteDto) {
+        try {
+            reservedDeleteDto.setClientId(id);
+
+            boolean deleteReserved = bookingService.deleteReserved(reservedDeleteDto);
+
+            if (deleteReserved) {
+                return ResponseEntity.noContent().build();
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(System.err);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }
